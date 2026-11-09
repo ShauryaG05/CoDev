@@ -16,6 +16,8 @@ import {
   Code2,
   ChevronLeft,
   CheckCircle2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 
 interface WorkspaceViewProps {
@@ -35,6 +37,8 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
   const [presenceUsers, setPresenceUsers] = useState<PresenceUser[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [cursorPos, setCursorPos] = useState<{ line: number; col: number }>({ line: 1, col: 1 });
   const [loading, setLoading] = useState(true);
 
   // 1. Fetch project data & file tree
@@ -52,11 +56,13 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
       setNodes(fetchedNodes);
       setMembers(membersRes.data.members || []);
 
-      // Auto-open first file (e.g. README or index)
-      const firstFile = fetchedNodes.find((n) => n.type === 'file');
-      if (firstFile) {
-        setOpenFiles([firstFile]);
-        setActiveFileId(firstFile.id);
+      // Auto-open first file (README or index) if no file currently open
+      if (!activeFileId) {
+        const firstFile = fetchedNodes.find((n) => n.type === 'file');
+        if (firstFile) {
+          setOpenFiles([firstFile]);
+          setActiveFileId(firstFile.id);
+        }
       }
     } catch (err) {
       console.error('Error loading workspace:', err);
@@ -84,7 +90,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
     };
 
     const handleTreeChanged = ({ op, node }: { op: string; node: any }) => {
-      console.log('[Socket tree:changed]', op, node);
       if (op === 'create') {
         setNodes((prev) => [...prev.filter((n) => n.id !== node.id), node]);
       } else if (op === 'rename' || op === 'move') {
@@ -97,15 +102,14 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
       }
     };
 
-    const handleMemberJoined = ({ user, role }: any) => {
-      console.log('[Socket member:joined]', user, role);
+    const handleMemberJoined = ({ user: newUser, role }: any) => {
       setMembers((prev) => [
-        ...prev.filter((m) => m.userId !== user.userId),
+        ...prev.filter((m) => m.userId !== newUser.userId),
         {
-          userId: user.userId,
-          username: user.username,
+          userId: newUser.userId,
+          username: newUser.username,
           email: '',
-          avatarColor: user.avatarColor,
+          avatarColor: newUser.avatarColor,
           role,
           joinedAt: new Date().toISOString(),
         },
@@ -118,7 +122,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
 
     const handleRoleChanged = ({ userId, role }: { userId: string; role: Role }) => {
       setMembers((prev) => prev.map((m) => (m.userId === userId ? { ...m, role } : m)));
-      // If current user's role changed, update local permissions immediately
       if (user?.id === userId) {
         setUserRole(role);
       }
@@ -138,7 +141,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
       socket.off('member:role-changed', handleRoleChanged);
       socket.emit('project:leave', { projectId });
     };
-  }, [socket, projectId]);
+  }, [socket, projectId, user]);
 
   // Tab & File actions
   const handleSelectFile = (fileId: string) => {
@@ -192,66 +195,79 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-ide-sidebar text-zinc-400 text-sm">
-        Opening project workspace...
+      <div className="h-screen flex items-center justify-center bg-ide-bg text-zinc-400 text-xs font-mono">
+        Loading workspace...
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-ide-sidebar overflow-hidden">
-      {/* Top Navigation */}
+    <div className="h-screen flex flex-col bg-ide-bg overflow-hidden select-none">
+      {/* Top Navbar */}
       <Navbar onBackToDirectory={onBackToDirectory} projectName={project?.name} />
 
       {/* Subheader Toolbar */}
-      <div className="h-10 bg-ide-panel/80 border-b border-ide-border px-4 flex items-center justify-between text-xs select-none">
-        <div className="flex items-center space-x-3">
+      <div className="h-10 bg-ide-surface/90 border-b border-ide-border px-3.5 flex items-center justify-between text-xs">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-ide-elevated rounded transition btn-tactile"
+          >
+            {isSidebarOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeftOpen className="w-3.5 h-3.5" />}
+          </button>
+
+          <span className="text-zinc-700">|</span>
+
           <button
             onClick={onBackToDirectory}
-            className="flex items-center space-x-1 text-zinc-400 hover:text-white transition"
+            className="flex items-center space-x-1 text-zinc-400 hover:text-zinc-200 transition"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
             <span>Dashboard</span>
           </button>
-          <span className="text-zinc-600">|</span>
-          <span className="font-semibold text-zinc-200">{project?.name}</span>
+
+          <span className="text-zinc-700">/</span>
+
+          <span className="font-semibold text-zinc-100 font-mono tracking-tight">{project?.name}</span>
+
           <span
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase ${
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider ${
               userRole === 'owner'
-                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20'
                 : userRole === 'editor'
-                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                : 'bg-zinc-700/30 text-zinc-400'
+                ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20'
+                : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
             }`}
           >
             {userRole}
           </span>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2.5">
           {/* Active online avatars in this project */}
-          <div className="flex items-center space-x-1.5 mr-2">
+          <div className="flex items-center space-x-1.5 mr-1">
             <div className="flex -space-x-1.5 overflow-hidden">
               {presenceUsers.map((u) => (
                 <div
                   key={u.id}
                   title={`${u.username} (Online)`}
-                  className="w-6 h-6 rounded-full border-2 border-ide-panel font-bold text-[9px] text-white flex items-center justify-center shadow"
+                  className="w-5 h-5 rounded-full border border-ide-surface font-bold text-[8px] text-white flex items-center justify-center shadow-sm"
                   style={{ backgroundColor: u.avatarColor || '#6366f1' }}
                 >
-                  {u.username.slice(0, 2).toUpperCase()}
+                  {u.username.slice(0, 1).toUpperCase()}
                 </div>
               ))}
             </div>
-            <span className="text-[11px] text-zinc-400">{presenceUsers.length} online</span>
+            <span className="text-[11px] text-zinc-400 font-mono">{presenceUsers.length} online</span>
           </div>
 
           <button
             onClick={() => setShowMembers(!showMembers)}
-            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-xs transition ${
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-xs transition btn-tactile ${
               showMembers
                 ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300'
-                : 'bg-ide-sidebar border-ide-border text-zinc-400 hover:text-white'
+                : 'bg-ide-surface border-ide-border text-zinc-400 hover:text-zinc-200 hover:bg-ide-elevated'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -261,7 +277,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
           {userRole === 'owner' && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition shadow-sm"
+              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition btn-tactile shadow-sm"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Invite</span>
@@ -270,39 +286,41 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
         </div>
       </div>
 
-      {/* Main Workspace Layout */}
+      {/* Main Workspace Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* File Tree Explorer (Left) */}
-        <div className="w-60 h-full shrink-0">
-          <FileTree
-            nodes={nodes}
-            selectedFileId={activeFileId}
-            onSelectFile={handleSelectFile}
-            onCreateNode={handleCreateNode}
-            onDeleteNode={handleDeleteNode}
-            readOnly={userRole === 'viewer'}
-            presenceUsers={presenceUsers}
-          />
-        </div>
+        {/* Left File Tree Sidebar */}
+        {isSidebarOpen && (
+          <div className="w-56 h-full shrink-0 border-r border-ide-border">
+            <FileTree
+              nodes={nodes}
+              selectedFileId={activeFileId}
+              onSelectFile={handleSelectFile}
+              onCreateNode={handleCreateNode}
+              onDeleteNode={handleDeleteNode}
+              readOnly={userRole === 'viewer'}
+              presenceUsers={presenceUsers}
+            />
+          </div>
+        )}
 
-        {/* Center Editor & Tabs Area */}
-        <div className="flex-1 flex flex-col h-full bg-[#1e1e1e] overflow-hidden">
-          {/* Open File Tabs */}
-          <div className="h-9 bg-ide-sidebar border-b border-ide-border flex items-center overflow-x-auto select-none">
+        {/* Center Editor with Tab Bar */}
+        <div className="flex-1 flex flex-col h-full bg-[#0b0d11] overflow-hidden">
+          {/* File Tabs */}
+          <div className="h-9 bg-ide-sidebar border-b border-ide-border flex items-center overflow-x-auto">
             {openFiles.map((file) => {
               const isActive = activeFileId === file.id;
               return (
                 <div
                   key={file.id}
                   onClick={() => setActiveFileId(file.id)}
-                  className={`group h-full flex items-center space-x-2 px-3 border-r border-ide-border text-xs cursor-pointer transition ${
+                  className={`group h-full flex items-center space-x-2 px-3 border-r border-ide-border text-xs cursor-pointer transition select-none ${
                     isActive
-                      ? 'bg-[#1e1e1e] text-indigo-300 border-t-2 border-t-indigo-500 font-medium'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-ide-hover'
+                      ? 'bg-[#0b0d11] text-zinc-100 border-t-2 border-t-indigo-500 font-medium'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-ide-surface'
                   }`}
                 >
                   <FileCode className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>{file.name}</span>
+                  <span className="font-mono text-[11px]">{file.name}</span>
                   <button
                     onClick={(e) => handleCloseTab(e, file.id)}
                     className="p-0.5 rounded hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-200 opacity-60 group-hover:opacity-100 transition"
@@ -323,17 +341,18 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
                 filename={activeFile.name}
                 language={activeFile.language || 'javascript'}
                 userRole={userRole}
+                onCursorChange={(line, col) => setCursorPos({ line, col })}
               />
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-zinc-500 text-xs">
-                <Code2 className="w-12 h-12 text-zinc-600 mb-3" />
-                <p>Select a file from the explorer to begin collaborative editing</p>
+                <Code2 className="w-10 h-10 text-zinc-700 mb-2" />
+                <p>Select a file from the explorer to begin editing</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Members Sidebar (Right Drawer) */}
+        {/* Right Drawer: Collaborators Panel */}
         <MembersList
           projectId={projectId}
           members={members}
@@ -345,27 +364,31 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ projectId, onBackT
         />
       </div>
 
-      {/* Bottom Status Bar */}
-      <footer className="h-6 bg-indigo-950/60 border-t border-ide-border px-3 flex items-center justify-between text-[11px] text-zinc-400 select-none">
+      {/* Status Bar */}
+      <footer className="h-6 bg-ide-sidebar border-t border-ide-border px-3.5 flex items-center justify-between text-[11px] text-zinc-500 font-mono select-none">
         <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1 text-emerald-400">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>CRDT Convergence Active (Yjs)</span>
+          <div className="flex items-center space-x-1.5 text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>CRDT Sync Active</span>
           </div>
           <span>•</span>
           <span>Role: {userRole}</span>
           <span>•</span>
-          <span>Language: {activeFile?.language || 'plaintext'}</span>
+          <span>
+            Ln {cursorPos.line}, Col {cursorPos.col}
+          </span>
         </div>
 
         <div className="flex items-center space-x-3">
           <span>UTF-8</span>
           <span>•</span>
-          <span>Tab Size: 2</span>
+          <span>Spaces: 2</span>
+          <span>•</span>
+          <span className="capitalize">{activeFile?.language || 'plaintext'}</span>
         </div>
       </footer>
 
-      {/* Invite Modal */}
+      {/* Modals */}
       <InviteModal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}

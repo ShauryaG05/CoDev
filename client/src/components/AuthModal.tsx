@@ -45,26 +45,28 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-ide-panel border border-ide-border rounded-xl shadow-2xl p-6 sm:p-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+      <div className="w-full max-w-sm bg-ide-surface border border-ide-border rounded-xl shadow-elevated p-6 sm:p-7">
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl mb-3 text-indigo-400">
-            <Code2 className="w-8 h-8" />
+          <div className="p-2.5 bg-ide-elevated border border-ide-border rounded-xl mb-3 text-indigo-400 shadow-subtle-inner">
+            <Code2 className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">CoDev</h2>
-          <p className="text-sm text-zinc-400 mt-1">Real-time pair programming & independent cloud directories</p>
+          <h2 className="text-xl font-bold text-white tracking-tight font-mono">CoDev</h2>
+          <p className="text-xs text-zinc-400 mt-1">Real-time collaborative code workspace</p>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex bg-ide-sidebar p-1 rounded-lg border border-ide-border mb-6">
+        <div className="flex bg-ide-sidebar p-1 rounded-lg border border-ide-border mb-5">
           <button
             type="button"
             onClick={() => {
               setIsRegister(false);
               setError(null);
             }}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition flex items-center justify-center space-x-1.5 ${
-              !isRegister ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition flex items-center justify-center space-x-1.5 ${
+              !isRegister
+                ? 'bg-ide-elevated text-zinc-100 shadow-sm border border-ide-border'
+                : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
             <LogIn className="w-3.5 h-3.5" />
@@ -76,24 +78,26 @@ export const AuthModal: React.FC = () => {
               setIsRegister(true);
               setError(null);
             }}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition flex items-center justify-center space-x-1.5 ${
-              isRegister ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition flex items-center justify-center space-x-1.5 ${
+              isRegister
+                ? 'bg-ide-elevated text-zinc-100 shadow-sm border border-ide-border'
+                : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Create Account</span>
+            <span>Register</span>
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
+          <div className="mb-4 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+            <label className="block text-xs font-medium text-zinc-300 mb-1">
               {isRegister ? 'Username' : 'Username or Email'}
             </label>
             <input
@@ -101,65 +105,65 @@ export const AuthModal: React.FC = () => {
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={isRegister ? 'e.g. dev_sarah' : 'sarah or sarah@example.com'}
-              className="w-full px-3.5 py-2 bg-ide-sidebar border border-ide-border rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition"
+              placeholder={isRegister ? 'e.g. dev_alex' : 'alex or alex@example.com'}
+              className="w-full px-3 py-2 bg-ide-sidebar border border-ide-border rounded-lg text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
 
           {isRegister && (
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Email Address</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Email Address</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full px-3.5 py-2 bg-ide-sidebar border border-ide-border rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full px-3 py-2 bg-ide-sidebar border border-ide-border rounded-lg text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Password</label>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-3.5 py-2 bg-ide-sidebar border border-ide-border rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition"
+              className="w-full px-3 py-2 bg-ide-sidebar border border-ide-border rounded-lg text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium text-sm transition flex items-center justify-center space-x-2 disabled:opacity-50"
+            className="w-full mt-2 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium text-xs transition flex items-center justify-center space-x-1.5 btn-tactile disabled:opacity-50 shadow-sm"
           >
-            <span>{loading ? 'Please wait...' : isRegister ? 'Create Account' : 'Sign In'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>{loading ? 'Processing...' : isRegister ? 'Create Account' : 'Sign In'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </form>
 
         {/* Demo Fast Autofill */}
-        <div className="mt-6 pt-5 border-t border-ide-border/60">
-          <div className="flex items-center space-x-1.5 text-xs text-zinc-400 mb-2.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span className="font-semibold text-zinc-300">Quick Test Credentials:</span>
+        <div className="mt-5 pt-4 border-t border-ide-border/60">
+          <div className="flex items-center space-x-1.5 text-[11px] text-zinc-400 mb-2">
+            <Sparkles className="w-3 h-3 text-indigo-400" />
+            <span className="font-medium text-zinc-300">Quick Test Profiles:</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button
               type="button"
               onClick={() => handleQuickDemo('alice')}
-              className="px-2.5 py-1.5 bg-ide-sidebar hover:bg-ide-hover border border-ide-border rounded text-zinc-300 text-left transition"
+              className="px-2 py-1.5 bg-ide-sidebar hover:bg-ide-elevated border border-ide-border rounded text-zinc-300 text-left transition btn-tactile text-[11px]"
             >
               Fill <strong>Alice</strong> (User 1)
             </button>
             <button
               type="button"
               onClick={() => handleQuickDemo('bob')}
-              className="px-2.5 py-1.5 bg-ide-sidebar hover:bg-ide-hover border border-ide-border rounded text-zinc-300 text-left transition"
+              className="px-2 py-1.5 bg-ide-sidebar hover:bg-ide-elevated border border-ide-border rounded text-zinc-300 text-left transition btn-tactile text-[11px]"
             >
               Fill <strong>Bob</strong> (User 2)
             </button>

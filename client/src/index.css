@@ -2,43 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Scrollbar */
+@layer base {
+  body {
+    @apply bg-ide-bg text-zinc-100 font-sans;
+  }
+}
+
+/* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
-  border-radius: 3px;
+  background: #232734;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #373c4e;
 }
 
-/* Collaborative Remote Cursor Styles */
-.remote-caret {
+/* Y-Monaco Native Remote Cursors & Selection */
+.yRemoteSelection {
+  background-color: rgba(99, 102, 241, 0.22);
+}
+
+.yRemoteSelectionHead {
   position: absolute;
   border-left: 2px solid;
-  margin-left: -1px;
+  border-color: inherit;
   height: 100%;
   box-sizing: border-box;
+  pointer-events: none;
 }
 
-.remote-caret-label {
+.yRemoteSelectionHead::after {
   position: absolute;
-  top: -18px;
+  content: ' ';
+  border: 3px solid;
+  border-color: inherit;
+  border-radius: 3px;
+  left: -4px;
+  top: -5px;
+  pointer-events: none;
+}
+
+/* Tooltip on cursor hover */
+.yRemoteSelectionHead:hover::before {
+  content: attr(data-username);
+  position: absolute;
+  top: -22px;
   left: -2px;
   font-size: 10px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
+  font-family: 'Geist', sans-serif;
+  font-weight: 500;
   color: #ffffff;
-  padding: 1px 4px;
-  border-radius: 3px;
+  background-color: inherit;
+  padding: 1px 6px;
+  border-radius: 4px;
   white-space: nowrap;
   pointer-events: none;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Tactile button feedback */
+.btn-tactile {
+  transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn-tactile:active {
+  transform: scale(0.98);
 }
